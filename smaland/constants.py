@@ -81,7 +81,6 @@ constants["public"]["INTEREST"] =         'interest'
 constants["public"]["FOREIGN_TAX"] =      'foreign-tax'
 
 """Channels"""
-
 constants["public"]["ACCOUNTS"] =           'accounts'
 constants["public"]["QUOTES"] =             'quotes'
 constants["public"]["ORDERDEPTHS"] =        'orderdepths'

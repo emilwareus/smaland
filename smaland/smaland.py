@@ -1,17 +1,13 @@
 
-from constants import constants
+from .constants import constants
 import requests as r
 import json
-from totp import totp
+from .totp import totp
 import websocket
 import re
-import os
 from urllib.parse import urlencode
 from bs4 import BeautifulSoup
 import pandas as pd
-import dotenv
-from websocket import create_connection
-import websocket
 import time
 try:
     import thread
@@ -20,7 +16,6 @@ except ImportError:
 import time
 import threading
 
-dotenv.load_dotenv()
 
 
 BASE_URL = 'https://www.avanza.se'
@@ -41,7 +36,6 @@ def base_request(url, method='GET', data={}, headers={}):
     headers.update(HEADERS)
     data = json.dumps(data)
     headers['content-length'] = str(len(data))
-    print(url)
     resp = r.request(method=method,
                      url=BASE_URL + url,
                      data=data,
@@ -102,7 +96,7 @@ class Smaland():
 
             elif(message[0]["channel"] in self._subscriptions.keys()):
                 if(self._subscriptions[message[0]["channel"]]["successful"]):
-                    self._subscriptions[message[0]["channel"]]["callback"](message[0])
+                    self._subscriptions[message[0]["channel"]]["callback"](message[0]["data"])
 
         def _on_error(ws, error):
             print(error)
@@ -138,8 +132,14 @@ class Smaland():
 
         if(self._push_subscription_id == None):
             raise Exception("No subscription string")
-
+        
+        re_connect_soc = False
         if(self._socket == None):
+            re_connect_soc = True
+        elif(self._socket.sock == None):
+            re_connect_soc = True
+
+        if(re_connect_soc):
             self._init_socket()
             self.run_forever(self._socket)
             time.sleep(2)
@@ -162,6 +162,7 @@ class Smaland():
 
 
     def close_all_subscriptions(self):
+        self._subscriptions = {}
         self._socket.close()
 
     def _schedule_reauth(self, authentication_timeout=60*60):
@@ -175,7 +176,7 @@ class Smaland():
             data = {
                 "maxInactiveMinutes": MAX_INACTIVE_MINUTES,
                 "password": credentials.get("password"),
-                "username": credentials.get("username")
+                "username": credentials.get("username"),
             }
         except Exception as e:
             print(e)
@@ -198,7 +199,7 @@ class Smaland():
             return {"message": "Unsuported 2FA method"}, 400
 
         # Secret for 2FA
-        secret = os.getenv("secret_av")
+        secret = credentials.get("secret")
         totpCode = totp(secret)
 
         data_2fa = {
@@ -407,10 +408,6 @@ class Smaland():
 
         return res
 
-    def get_code(self):
-        # Secret for 2FA
-        secret = os.getenv("secret_av")
-        return totp(secret)
 
     def get_df_all_stocks(self):
         """
@@ -478,23 +475,3 @@ class Smaland():
 
         return df.join(pd.DataFrame(res_dict))
 
-
-if __name__ == '__main__':
-    sl = Smaland()
-
-    credentials = {
-        'username': os.getenv("username_av"),
-        'password': os.getenv("password_av")
-    }
-
-    sl.authenticate(credentials)
-
-    def _callback(message_js):
-        print(message_js)
-
-    sl.subscribe("/quotes/5364", callback=_callback)
-    sl.subscribe("/quotes/5364", callback=_callback)
-    sl.subscribe("/quotes/5240", callback=_callback)
-
-    time.sleep(20)
-    sl.close_all_subscriptions()

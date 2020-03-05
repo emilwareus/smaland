@@ -1,0 +1,6 @@
+pyotp
+websocket_client
+urllib
+beautifulsoup4
+pandas
+threading
