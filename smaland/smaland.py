@@ -17,7 +17,6 @@ import time
 import threading
 
 
-
 BASE_URL = 'https://www.avanza.se'
 MIN_INACTIVE_MINUTES = 30
 MAX_INACTIVE_MINUTES = 60 * 24
@@ -65,7 +64,7 @@ class Smaland():
         socket_message_count = self._socket_message_count
         json_object[0]["id"] = socket_message_count
         ws.send(json.dumps(json_object))
-        
+
     def _init_socket(self):
 
         def _on_message(ws, message):
@@ -92,11 +91,19 @@ class Smaland():
                 self._send(ws, send_obj)
 
             elif(message[0]["channel"] == "/meta/subscribe"):
-                self._subscriptions[message[0]["subscription"]]["successful"] = message[0]["successful"]
+                self._subscriptions[message[0]["subscription"]
+                                    ]["successful"] = message[0]["successful"]
 
             elif(message[0]["channel"] in self._subscriptions.keys()):
                 if(self._subscriptions[message[0]["channel"]]["successful"]):
-                    self._subscriptions[message[0]["channel"]]["callback"](message[0]["data"])
+
+                    # If is_class, call _callback, else call function
+                    if(self._subscriptions[message[0]["channel"]]['is_class']):
+                        self._subscriptions[message[0]["channel"]]["callback"]._callback(
+                            message[0]["data"])
+                    else:
+                        self._subscriptions[message[0]["channel"]]["callback"](
+                            message[0]["data"])
 
         def _on_error(ws, error):
             print(error)
@@ -129,10 +136,40 @@ class Smaland():
         threading.Thread(target=ws.run_forever).start()
 
     def subscribe(self, subscription_string, callback):
+        """
+        Subscribes to real-time data through websockets. 
+
+
+        Parameters
+        ----------
+        subscription_string : string on format {channel}/{orderbook_id}
+            channel is the type if rt-data: 
+                constants["public"]["ACCOUNTS"]
+                constants["public"]["QUOTES"] 
+                constants["public"]["ORDERDEPTHS"]
+                constants["public"]["TRADES"]
+                constants["public"]["BROKERTRADESUMMARY"]
+                constants["public"]["POSITIONS"] 
+                constants["public"]["ORDERS"] 
+                constants["public"]["DEALS"] 
+
+        callback : function OR class that implements SubscriptionCallback
+            function:
+                def _callback(message):
+                    print(message)
+
+            class: 
+                class SubscriptionCallback:
+                    def __init__(self):
+                        self._context = {}
+
+                    def _callback(self, message):
+                        print(message)
+        """
 
         if(self._push_subscription_id == None):
             raise Exception("No subscription string")
-        
+
         re_connect_soc = False
         if(self._socket == None):
             re_connect_soc = True
@@ -145,21 +182,22 @@ class Smaland():
             time.sleep(2)
 
         if(subscription_string in self._subscriptions.keys()):
-            raise Exception("Already subsrcibed the channel {subscription_string}")
+            raise Exception(
+                "Already subsrcibed the channel {subscription_string}")
 
         self._subscriptions[subscription_string] = {
-            "callback" : callback,
-            "successful" : False,
+            "callback": callback,
+            "successful": False,
+            "is_class": type(callback) == type
         }
 
         sub_obj = [{
-            "channel" : "/meta/subscribe",
-            "clientId" : self._client_id,
+            "channel": "/meta/subscribe",
+            "clientId": self._client_id,
             "subscription": subscription_string
         }]
 
         self._send(self._socket, sub_obj)
-
 
     def close_all_subscriptions(self):
         self._subscriptions = {}
@@ -186,7 +224,7 @@ class Smaland():
             self._constants["paths"]["AUTHENTICATION_PATH"], method='POST', data=data)
 
         res_data = res.json()
-        if(res.status_code != 200):
+        if(res.status_code >= 300):
             return res
 
         # Tow 2FA
@@ -217,7 +255,7 @@ class Smaland():
         # Failed authentication
         if(res_sec.status_code >= 300):
             print("Failed authentication")
-            return res
+            return res_sec
 
         res_sec_data = res_sec.json()
         self._authenticated = True
@@ -231,6 +269,7 @@ class Smaland():
         # self._schedule_reauth(60*60)
 
         print("successful authentication")
+        return res_sec
 
     def get_overview(self):
         """Returns an overview of all accounts
@@ -255,14 +294,24 @@ class Smaland():
         """
         Get all transactions of an account.
 
-        @param {str} accountOrTransactionType A valid account ID or a [Transaction Type](#transaction-type).
+        Parameters
+        ----------
+        account_or_transaction_type : string, a account_id or {transaction_type}
+        options: dict
+            options = {
+                "from"          : {string} On the form YYYY-MM-DD,
+                "to"            : {string} On the form YYYY-MM-DD,
+                "maxAmount"     : {int} Only fetch transactions of at most this value,
+                "minAmount"     : {int} Only fetch transactions of at least this value,
+                "orderbookId"   : {string|list} Only fetch transactions involving this/these orderbooks
+            }
 
-        @param {dict} options Configuring which transactions to fetch.
-        @param {str} [options.from] On the form YYYY-MM-DD.
-        @param {str} [options.to] On the form YYYY-MM-DD.
-        @param {int} [options.maxAmount] Only fetch transactions of at most this value.
-        @param {int} [options.minAmount] Only fetch transactions of at least this value.
-        @param {str|list} [options.orderbookId] Only fetch transactions involving this/these orderbooks.
+        -
+
+        Returns
+        --------
+
+
         """
 
         url = self._constants["paths"]["TRANSACTIONS_PATH"].replace(
@@ -408,7 +457,6 @@ class Smaland():
 
         return res
 
-
     def get_df_all_stocks(self):
         """
         Returns a pandas DataFrame of all Swedish stocks.
@@ -474,4 +522,3 @@ class Smaland():
             res_dict.append(_parse_stock_list_more(row))
 
         return df.join(pd.DataFrame(res_dict))
-

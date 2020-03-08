@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 *.ipynb
+PRIVATE.md
 # C extensions
 *.so
 

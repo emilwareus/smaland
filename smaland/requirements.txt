@@ -4,3 +4,5 @@ urllib
 beautifulsoup4
 pandas
 threading
+pytest-dotenv
+python-dotenv
