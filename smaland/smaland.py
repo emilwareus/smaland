@@ -341,6 +341,9 @@ class Smaland():
         return self.call(url, method='DELETE')
 
     def get_instrument(self, instrument_type, instrument_id):
+        """
+        Get data on instrument
+        """
         url = self._constants["paths"]["INSTRUMENT_PATH"].replace(
             '{0}', instrument_type.lower()).replace('{1}', str(instrument_id))
         return self.call(url, method='GET')
