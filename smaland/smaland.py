@@ -30,7 +30,7 @@ HEADERS = {
 }
 
 
-def base_request(url, method='GET', data={}, headers={}):
+def base_request(url, method='GET', data={}, headers={}, proxies={}):
 
     headers.update(HEADERS)
     data = json.dumps(data)
@@ -38,7 +38,8 @@ def base_request(url, method='GET', data={}, headers={}):
     resp = r.request(method=method,
                      url=BASE_URL + url,
                      data=data,
-                     headers=headers)
+                     headers=headers,
+                     proxies=proxies)
 
     return resp
 
@@ -172,7 +173,7 @@ class Smaland():
 
         re_connect_soc = False
         if(self._socket == None):
-            re_connect_soc = True
+            re_connect_soc = True   
         elif(self._socket.sock == None):
             re_connect_soc = True
 
@@ -359,12 +360,12 @@ class Smaland():
             '{0}', ",".join([str(b) for b in orderbook_ids]))
         return self.call(url, method='GET')
 
-    def get_chartdata(self, orderbook_id, period="three_years"):
+    def get_chartdata(self, orderbook_id, period="three_years", authenticated_request = True, proxies = {}):
         period = period.lower()
         url = self._constants["paths"]["CHARTDATA_PATH"].replace(
             '{0}', str(orderbook_id))
         url_query = url + "?" + urlencode({'timePeriod': period})
-        return self.call(url_query, method='GET')
+        return self.call(url_query, method='GET', authenticated_request = True, proxies = {})
 
     def place_order(self, options):
         """
@@ -443,24 +444,26 @@ class Smaland():
         url_query = url + "?" + query
         return self.call(url_query, method='GET')
 
-    def call(self, url, method='GET',  data={}):
+    def call(self, url, method='GET',  data={}, authenticated_request = True, proxies = {}):
         # Remove dangling question mark
         if (url[-1] == '?'):
             url = url[:-1]
 
-        if(self._authenticated == False):
+        
+        if(self._authenticated == False and authenticated_request == True):
             raise Exception("Not authenticated")
 
         headers_auth = dict()
-        headers_auth['X-AuthenticationSession'] = self._authentication_session
-        headers_auth['X-SecurityToken'] = self._security_token
+        if(authenticated_request):
+            headers_auth['X-AuthenticationSession'] = self._authentication_session
+            headers_auth['X-SecurityToken'] = self._security_token
 
         res = base_request(url, method=method, data=data,
-                           headers=headers_auth)
+                           headers=headers_auth, proxies=proxies)
 
         return res
 
-    def get_df_all_stocks(self):
+    def get_df_all_stocks(self, proxies = {}):
         """
         Returns a pandas DataFrame of all Swedish stocks.
         NOTICE: This uses scraping methods, use with care!
@@ -468,7 +471,7 @@ class Smaland():
         """
 
         url = BASE_URL + self._constants['paths']['LIST_ALL_SWEDISH_STOCKS']
-        res = r.get(url)
+        res = r.get(url, proxies = proxies)
         soup = BeautifulSoup(res.content, 'html.parser')
         res_parsed = soup.find_all('a', class_='ellipsis')
 
