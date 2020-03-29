@@ -497,7 +497,7 @@ class Smaland():
             'tr', class_=lambda value: value and value.startswith("row rowId"))
 
         def _str_to_float(inp_str):
-            if(len(inp_str) == 0):
+            if(len(inp_str) == 0 or inp_str == "-"):
                 return None
             else:
                 return float(inp_str)
@@ -505,22 +505,16 @@ class Smaland():
         def _parse_stock_list_more(row):
             output = dict()
             v = row.find_all('span')
-            output['latest'] = _str_to_float(
-                re.sub('[^z0-9+.*]+', '', v[0].text.strip().replace(",", ".")))
-            output['pct_change_1d'] = _str_to_float(
-                re.sub('[^z0-9+.*]+', '', v[1].text.strip().replace(",", ".")))
-            output['pct_change_1y'] = _str_to_float(
-                re.sub('[^z0-9+.*]+', '', v[2].text.strip().replace(",", ".")))
+            output['latest'] = _str_to_float(v[0].text.strip().replace(",", "."))
+            output['pct_change_1d'] = _str_to_float(v[1].text.strip().replace(",", "."))
+            output['pct_change_1y'] = _str_to_float(v[2].text.strip().replace(",", "."))
             output['market_cap'] = _str_to_float(
                 re.sub('[^z0-9+.*]+', '', v[3].text.strip().replace(",", ".")))
-            output['pe'] = _str_to_float(
-                re.sub('[^z0-9+.*]+', '', v[4].text.strip().replace(",", ".")))
-            output['pct_div'] = _str_to_float(
-                re.sub('[^z0-9+.*]+', '', v[5].text.strip().replace(",", ".")))
-            output['owners_avanza'] = _str_to_float(
-                re.sub('[^z0-9+.*]+', '', v[6].text.strip().replace(",", ".")))
+            output['pe'] = _str_to_float(v[4].text.strip().replace(",", "."))
+            output['pct_div'] = _str_to_float(v[5].text.strip().replace(",", "."))
+            output['owners_avanza'] = int(_str_to_float(
+                re.sub('[^z0-9+.*]+', '', v[6].text.strip().replace(",", "."))))
             output['list'] = v[7].text.strip()
-
             return output
 
         res_dict = []
