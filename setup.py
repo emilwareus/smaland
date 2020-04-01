@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="smaland", 
-    version="0.0.5",
+    version="0.0.6",
     author="Emil Wåreus",
     author_email="emil.wareus47@gmail.com",
     description="Python Avanza API",

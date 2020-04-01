@@ -365,7 +365,7 @@ class Smaland():
         url = self._constants["paths"]["CHARTDATA_PATH"].replace(
             '{0}', str(orderbook_id))
         url_query = url + "?" + urlencode({'timePeriod': period})
-        return self.call(url_query, method='GET', authenticated_request = True, proxies = {})
+        return self.call(url_query, method='GET', authenticated_request = True, proxies = proxies)
 
     def place_order(self, options):
         """
@@ -522,3 +522,27 @@ class Smaland():
             res_dict.append(_parse_stock_list_more(row))
 
         return df.join(pd.DataFrame(res_dict))
+
+
+    def get_chartdata_desktop_api(self, orderbook_id, start, end, chart_type = "OHLC", chart_resolution = "DAY", proxies = {}):
+    
+        base_url = "https://www.avanza.se/ab/component/highstockchart/getchart/orderbook"
+        
+        data = {
+            "orderbookId" : orderbook_id,
+            "chartType": chart_type,
+            "widthOfPlotContainer":558,
+            "chartResolution": chart_resolution,
+            "navigator":False,
+            "percentage":False,
+            "volume": True,
+            "owners": False,
+            "start": start,
+            "end": end,
+            "ta":[]
+        }
+        
+        headers = {
+            'content-type': 'application/json'
+        }
+        return r.post(base_url, headers = headers, data = json.dumps(data), proxies = proxies)

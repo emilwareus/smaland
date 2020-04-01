@@ -52,10 +52,11 @@ constants["public"]["THREE_MONTHS"] =  'THREE_MONTHS'
 constants["public"]["ONE_WEEK"] =      'ONE_WEEK'
 constants["public"]["THIS_YEAR"] =     'THIS_YEAR'
 constants["public"]["ONE_YEAR"] =      'ONE_YEAR'
+constants["public"]["THREE_YEARS"] =   'THREE_YEARS'
 constants["public"]["FIVE_YEARS"] =    'FIVE_YEARS'
 
 
-constants["public"]["CANDLESTICK"] =    'CANDLESTICK'
+constants["public"]["CANDLESTICK"] =    "CANDLESTICK"
 constants["public"]["OHLC"] =            "OHLC"
 constants["public"]["AREA"] =            "AREA"
 
